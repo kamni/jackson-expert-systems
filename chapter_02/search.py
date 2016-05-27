@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 
 class AbstractNode(object):
     """
-    Base class for all nodes used with Search.
+    Base class for all nodes used with an AbstractSearch-based class.
 
     Should implement the following methods:
         generate_child_nodes
@@ -35,7 +35,71 @@ class AbstractNode(object):
         pass
 
 
-class Search(object):
+class AbstractSearch(object):
+    """
+    Base class for all types of searches implemented in Chapter 02 study questions.
+
+    Should implement the following methods:
+
+        _return_result
+    """
+
+    def depth_first(self, starting_node, goal):
+        """
+        Does a depth-first search of nodes
+
+        :param starting_node: node object for the beginning state of the search
+        :param goal: object representing the desired end state
+        :return: dependent on the implementation of _return_result
+
+        Word of caution: this algorithm can potentially run infinitely if the problem
+            space is has branches that are infinitely deep without returning a solution
+        """
+        return self._search(starting_node, goal, self._generate_depth_first_queue)
+
+    def breadth_first(self, starting_node, goal):
+        """
+        Does a breadth-first search of nodes
+
+        :param starting_node: node object for the beginning state of the search
+        :param goal: object representing the desired end state
+        :return: dependent on the implementation of _return_result
+        """
+        return self._search(starting_node, goal, self._generate_breadth_first_queue)
+
+    def _generate_depth_first_queue(self, current_node, pending_nodes):
+        return current_node.generate_child_nodes() + pending_nodes
+
+    def _generate_breadth_first_queue(self, current_node, pending_nodes):
+        return pending_nodes + current_node.generate_child_nodes()
+
+    def _search(self, starting_node, goal, queue_expansion_function):
+        """
+        :param starting_node: node object for the beginning state of the search
+        :param goal: object representing the desired end state
+        :param queue_expansion_function: function to determine how to add more nodes to
+                the queue
+        :return: the result of calling _return_result, which is dependent on the class
+                that implements it.
+        """
+
+        # While the algorithm specifications are written recursively, Python does
+        # not handle tail recursion very well. To prevent running out the stack, the
+        # algorithm is written iteratively.
+        pending_nodes = []
+        current_node = starting_node
+        while not current_node.fulfills_goal(goal):
+            new_current, new_pending = queue_expansion_function(current_node, pending_nodes)
+            if not new_pending:
+                return self._return_result(current_node, False)
+        return self._return_result(current_node, True)
+
+    @abstractmethod
+    def _return_result(self, final_node, is_success):
+        pass
+
+
+class DoesItHaveASolution(AbstractSearch):
     """
     Searches through a problem space using the following algorithms:
 
@@ -64,49 +128,10 @@ class Search(object):
                 else dfs(goal, head(pending), tail(pending))
             }
         }
+
+    Per the algorithm described, this search only returns True or False to the question
+    "Is there a solution to the problem in the given problem space?"
     """
 
-    def depth_first(self, starting_node, goal):
-        """
-        Does a depth-first search of nodes
-
-        :param starting_node:
-        :param goal:
-        :return:
-        """
-        pass
-
-    def breadth_first(self, starting_node, goal):
-        """
-        Does a breadth-first search of nodes
-
-        :param starting_node:
-        :param goal:
-        :return:
-        """
-        pass
-
-    '''
-    def dfs(goal, current):
-        pending = []
-        while goal_is_unmet(goal, current):
-            current, pending = dfs_helper(current, pending)
-            if not pending:
-                return False
-        return True
-
-    def dfs_helper(current, pending):
-        new_pending = expand(current) + pending
-        return new_pending[0], new_pending[1:]
-
-    def goal_is_unmet(goal, node):
-        # to be implemented depending on construction of goal/node
-        # should perform some kind of comparison and return True if they are the 'same', and
-        # False if they are different
-        raise NotImplementedError
-
-    def expand(node):
-        # to be implemented depending on construction of node
-        # returns a list of new nodes algorithmically generated from the old node
-        raise NotImplementedError
-    '''
+    def _return_result(self, final_node, is_success):
+        return is_success
