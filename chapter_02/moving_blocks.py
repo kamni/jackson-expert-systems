@@ -52,42 +52,30 @@ class BlockConfigurationNode(AbstractNode):
 
         # game state setup
         self._state = self.game_state(state_for_red, state_for_blue)
-        self._moves = self._generate_valid_moves()
+        self._moves = self._generate_allowed_moves()
         self._valid = self._set_validity()
 
-    def _generate_valid_moves(self):
-        VALID_MOVES = {
-            PILE1_REPR: [
-                ((-1, 1), (0, 0)),  # R moves to pile2
-                ((-2, 2), (0, 0)),  # RR moves to pile2
-                ((-1, 1), (-1, 1)),  # RB moves to pile 2
-                ((0, 0), (-2, 2)),  # BB moves to pile 2
-                ((0, 0), (-1, 1)),  # B moves to pile 2
-            ],
-            PILE2_REPR: [
-                ((1, -1), (0, 0)),  # R moves to pile1
-                ((2, -2), (0, 0)),  # RR moves to pile1
-                ((1, -1), (1, -1)),  # RB moves to pile 1
-                ((0, 0), (2, -2)),  # BB moves to pile 1
-                ((0, 0), (1, -1)),  # B moves to pile 1
-            ]
-        }
+    def _generate_allowed_moves(self):
+        pile1 = []
+        pile2 = []
+
+        for i in range(self._hands):  #counter for Red
+            for j in range(self.hands-1, -1, -1):  # counter for Blue
+                pile1.append((-i, i), (-j, j))
+                pile2.append((i, -i), (j, -j))
+
+        return (pile1, pile2)
 
     def _set_validity(self):
         # block count shouldn't exceed expected total number between pile1 and pile2
-        red_count_is_valid = self._check_block_count(self.RED_INDEX, self._red)
-        blue_count_is_valid = self._check_block_count(self.BLUE_INDEX, self._blue)
+        pile1_red, pile2_red = self._get_block_count(self.RED_INDEX)
+        pile1_blue, pile2_blue = self._get_block_count(self.BLUE_INDEX)
+        return pile1_red <= pile1_blue and pile2_red <= pile2_blue
 
-        change_from_parent = self._calculate_state_change()
-
-    # total number of blue across sides
-    # total number of red across sides
-    # difference between parent and node on any side must be at least one
-    # difference between parent and node can't be more than number of hands
-    # red on any side can't be greater than blue on same side
-
-    def _check_block_count(self, game_state_index, total_expected_count):
-        raise NotImplementedError
+    def _get_block_count(self, game_state_index):
+        pile1_count = self._state[game_state_index][self.PILE1_INDEX]
+        pile2_count = self._state[game_state_index][self.PILE2_INDEX]
+        return pile1_count, pile2_count
 
     @staticmethod
     def state_for_block_type(pile1, hand, pile2, hand_location):
