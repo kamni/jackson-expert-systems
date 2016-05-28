@@ -11,7 +11,7 @@ so we're just going to reword it as a blocks game. The rules are as follows:
 - When moving between piles, you must always move at least one block.
 - To make the game more fun, you're not allowed to have a pile where the red blocks
     outnumber the blue blocks at any time.
-- You can always carry a block and choose not to put it in the pile.
+- You can ignore the blue/red count for blocks in the hand
 """
 
 from search import AbstractNode
@@ -21,31 +21,88 @@ class BlockConfigurationNode(AbstractNode):
     """
     TODO: write docs
     """
-    DEFAULT_NUM_BLUE_BLOCKS = 3
-    DEFAULT_NUM_RED_BLOCKS = 3
-    DEFAULT_NUM_HANDS = 2
+    PILE1_REPR = 0
+    PILE2_REPR = 1
 
-    PILE1 = 0
-    HAND = 1
-    PILE2 = 2
-    HAND_POSITION = 3
+    PILE1_INDEX = 0
+    HAND_INDEX = 1
+    PILE2_INDEX = 2
+    HAND_POS_INDEX = 3
 
-    def __init__(self, num_blue_blocks=DEFAULT_NUM_BLUE_BLOCKS,
-                 num_red_blocks=DEFAULT_NUM_RED_BLOCKS, num_hands=DEFAULT_NUM_HANDS):
-        self.hand_count = num_hands
-        self.blue_count = num_blue_blocks
-        self.red_count = num_red_blocks
+    RED_INDEX = 0
+    BLUE_INDEX = 1
 
-        # basic setup
-        self.beginning_state = self._create_game_state(
-            self._create_state_for_block_type(self.red_count, 0, 0, 0),
-            self._create_state_for_block_type(self.blue_count, 0, 0, 0)
-        )
-        self.game_paths = [self.beginning_state]
-        self.end_goal = self._create_game_state(
-            self._create_state_for_block_type(0, 0, self.red_count, 1),
-            self._create_state_for_block_type(0, 0, self.blue_count, 1)
-        )
+    def __init__(self, state_for_red, state_for_blue,
+                 total_red, total_blue, total_hands,
+                 parent=None):
+        """
+        Creates a node for use in the 'Block Game' problem.
+
+        :param state_for_red: tuple in the form (pile1, pile2, hand_location)
+        :param state_for_blue: tuple in the form (pile1, pile2, hand_location)
+        :param total_red: integer, expected total number of red blocks
+        :param total_blue: integer, expected total number of blue blocks
+        :param total_hands: integer, how many hands can move blocks
+        :param parent: parent node
+        """
+        self._red = total_red
+        self._blue = total_blue
+        self._hands = total_hands
+        self._parent = parent
+
+        # game state setup
+        self._state = self.game_state(state_for_red, state_for_blue)
+        self._moves = self._generate_valid_moves()
+        self._valid = self._set_validity()
+
+    def _generate_valid_moves(self):
+        VALID_MOVES = {
+            PILE1_REPR: [
+                ((-1, 1), (0, 0)),  # R moves to pile2
+                ((-2, 2), (0, 0)),  # RR moves to pile2
+                ((-1, 1), (-1, 1)),  # RB moves to pile 2
+                ((0, 0), (-2, 2)),  # BB moves to pile 2
+                ((0, 0), (-1, 1)),  # B moves to pile 2
+            ],
+            PILE2_REPR: [
+                ((1, -1), (0, 0)),  # R moves to pile1
+                ((2, -2), (0, 0)),  # RR moves to pile1
+                ((1, -1), (1, -1)),  # RB moves to pile 1
+                ((0, 0), (2, -2)),  # BB moves to pile 1
+                ((0, 0), (1, -1)),  # B moves to pile 1
+            ]
+        }
+
+    def _set_validity(self):
+        # block count shouldn't exceed expected total number between pile1 and pile2
+        red_count_is_valid = self._check_block_count(self.RED_INDEX, self._red)
+        blue_count_is_valid = self._check_block_count(self.BLUE_INDEX, self._blue)
+
+        change_from_parent = self._calculate_state_change()
+
+    # total number of blue across sides
+    # total number of red across sides
+    # difference between parent and node on any side must be at least one
+    # difference between parent and node can't be more than number of hands
+    # red on any side can't be greater than blue on same side
+
+    def _check_block_count(self, game_state_index, total_expected_count):
+        raise NotImplementedError
+
+    @staticmethod
+    def state_for_block_type(pile1, hand, pile2, hand_location):
+        # While it looks like the method is just returning *args, this is a means of
+        # decoupling so we can change the representation later without a complete rewrite
+        return (pile1, hand, pile2, hand_location)
+
+    @staticmethod
+    def game_state(state_for_red, state_for_blue):
+        # While it looks like the method is just returning *args, this is a means of
+        # decoupling so we can change the representation later without a complete rewrite
+        return (state_for_red, state_for_blue)
+
+    def is_valid(self):
+        return self._valid
 
     def generate_child_nodes(self):
         pass
@@ -53,15 +110,9 @@ class BlockConfigurationNode(AbstractNode):
     def fulfills_goal(self, ending_state):
         pass
 
-    def _create_state_for_block_type(self, pile1, hand, pile2, hand_location):
-        # While it looks like the method is just returning *args, this is a means of
-        # decoupling so we can change the representation later without a complete rewrite
-        return (pile1, hand, pile2, hand_location)
 
-    def _create_game_state(self, state_for_red, state_for_blue):
-        # While it looks like the method is just returning *args, this is a means of
-        # decoupling so we can change the representation later without a complete rewrite
-        return (state_for_red, state_for_blue)
+class BlockGameSolver(object):
+    pass
 
 
 if __name__ == '__main__':
