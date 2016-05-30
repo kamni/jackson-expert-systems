@@ -14,8 +14,7 @@ so we're just going to reword it as a blocks game. The rules are as follows:
 - You can ignore the blue/red count for blocks in the hand
 """
 
-from search import AbstractNode
-
+from search import AbstractNode, AbstractSearch
 
 class BlockConfigurationNode(AbstractNode):
     """
@@ -31,31 +30,46 @@ class BlockConfigurationNode(AbstractNode):
     RED_INDEX = 0
     BLUE_INDEX = 1
 
-    def __init__(self, state_for_red, state_for_blue, hand_location,
-                 total_red, total_blue, total_hands, parent=None):
+    def __init__(self, new_state, parent=None, num_hands=2):
         """
         Creates a node for use in the 'Block Game' problem.
 
-        :param state_for_red: tuple in the form (pile1, pile2)
-        :param state_for_blue: tuple in the form (pile1, pile2)
-        :param hand_location: integer, which pile the hands are currently by. Use
-                either PILE1_INDEX or PILE2_INDEX
-        :param total_red: integer, expected total number of red blocks
-        :param total_blue: integer, expected total number of blue blocks
-        :param total_hands: integer, how many hands can move blocks
-        :param parent: parent node
+        :param new_state: tuple representing the current node state. Should be
+                generated using BlockConfigurationNode.create_state
+        :param parent: node that is the parent of the current node in the search tree
+        :param num_hands: integer, number of hands available to move blocks. Ignore
+                this param if passing parent -- the value will be taken from the
+                parent if the parent exists.
         """
-        self._red = total_red
-        self._blue = total_blue
-        self._hand_loc = hand_location
-        self._hands = total_hands
-        self._parent = parent
+        self._current_state = new_state
+        if parent:
+            self._game_state = parent._game_state + [new_state]
+            self._color_count = parent._color_count
+            self._num_hands = parent._num_hands
+        else:
+            self._game_state = [new_state]
+            self._color_count = (sum(self._get_count_for_piles(self.RED_INDEX)),
+                                 sum(self._get_count_for_piles(self.BLUE_INDEX)))
+            self._num_hands = num_hands
 
-        # game state setup
-        self._state = self.game_state(state_for_red, state_for_blue)
-        self._valid = self._set_validity()
+        #self._valid = self._set_validity()
+    '''
+    def __repr__(self):
+        for state in self._game_state:
+            repr_string = '['
+            for color_index in (self.RED_INDEX, self.BLUE_INDEX):
+
+                for i in range(self._hands):
+                    #if i <
+                    pass
+
+        raise NotImplementedError
+
+    def __unicode__(self):
+        raise NotImplementedError
 
     def _set_validity(self):
+        raise Exception("Not updated")
         pile1_red, pile2_red = self._get_block_count(self.RED_INDEX)
         pile1_blue, pile2_blue = self._get_block_count(self.BLUE_INDEX)
 
@@ -68,22 +82,34 @@ class BlockConfigurationNode(AbstractNode):
         # can't have more reds than blues in any pile
         valid_red_vs_blue_count = pile1_red <= pile1_blue and pile2_red <= pile2_blue
 
+        raise NotImplementedError("Need to check that it is not a repeat of a previous state")
+
         return (valid_red_pile1_count and valid_red_pile2_count and
                 valid_blue_pile1_count and valid_blue_pile2_count and
                 valid_red_vs_blue_count)
 
-    def _get_block_count(self, game_state_index):
-        pile1_count = self._state[game_state_index][self.PILE1_INDEX]
-        pile2_count = self._state[game_state_index][self.PILE2_INDEX]
+    def _block
+    '''
+    def _get_count_for_piles(self, color_index):
+        """
+        Count how many blocks of a given color are in each pile total
+        :param color_index: integer representing which color should be returned for a
+                block count; either RED_INDEX or BLUE_INDEX
+        :return: tuple, (count for pile1, count for pile2)
+        """
+        pile1_count = self._current_state[color_index][self.PILE1_INDEX]
+        pile2_count = self._current_state[color_index][self.PILE2_INDEX]
         return pile1_count, pile2_count
-
+    '''
     def _new_move(self, old_move_tuple, new_move_tuple):
+        raise Exception("Not Updated")
         move = []
         move[self.PILE1_INDEX] = old_move_tuple[self.PILE1_INDEX] + new_move_tuple[self.PILE1_INDEX]
         move[self.PILE2_INDEX] = old_move_tuple[self.PILE2_INDEX] + new_move_tuple[self.PILE2_INDEX]
         return move
 
     def _new_child_node(self, new_red_state, new_blue_state, new_hand_location):
+        raise Exception("Not Updated")
         return BlockConfigurationNode(new_red_state, new_blue_state, new_hand_location,
                                        self._red, self._blue, self._hands, self)
 
@@ -93,6 +119,7 @@ class BlockConfigurationNode(AbstractNode):
 
         :return: dict representing allowed moves for each pile
         """
+        raise Exception("Not Updated")
         if not self._allowed_moves:
             pile1 = []
             pile2 = []
@@ -108,22 +135,29 @@ class BlockConfigurationNode(AbstractNode):
 
         return self._allowed_moves
 
+    @classmethod
+    def create_state(cls, red_pile1, red_pile2, blue_pile1, blue_pile2, hand_location):
+        raise NotImplementedError
+
     @staticmethod
     def state_for_block_type(pile1, pile2):
+        raise Exception("Not Updated")
         # While it looks like the method is just returning *args, this is a means of
         # decoupling so we can change the representation later without a complete rewrite
         return pile1, pile2
 
     @staticmethod
     def game_state(state_for_red, state_for_blue, current_hand):
+        raise Exception("Not Updated")
         # While it looks like the method is just returning *args, this is a means of
         # decoupling so we can change the representation later without a complete rewrite
         return state_for_red, state_for_blue, current_hand
-
+    '''
     def is_valid(self):
         return self._valid
 
     def generate_child_nodes(self):
+        raise Exception("Not Updated")
         child_nodes = []
 
         # we don't want to waste time generating children for invalid nodes
@@ -138,12 +172,23 @@ class BlockConfigurationNode(AbstractNode):
         return child_nodes
 
     def fulfills_goal(self, ending_state):
+        raise Exception("Not Updated")
         return self._state == ending_state
 
+'''
+class BlockGameSolver(AbstractSearch):
+    """
+    TODO: write docs
+    """
 
-class BlockGameSolver(object):
-    pass
+    def __init__(self, num_red_blocks, num_blue_blocks, num_hands):
+        self._red = num_red_blocks
+        self._blue = num_blue_blocks
+        self._hands = num_hands
 
+        self.paths
+'''
 
 if __name__ == '__main__':
     pass
+
