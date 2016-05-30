@@ -42,6 +42,8 @@ class BlockConfigurationNode(AbstractNode):
                 parent if the parent exists.
         """
         self._current_state = new_state
+        self._parent = parent
+
         if parent:
             self._game_state = parent._game_state + [new_state]
             self._color_count = parent._color_count
@@ -52,7 +54,7 @@ class BlockConfigurationNode(AbstractNode):
                                  sum(self._get_count_for_piles(self.BLUE_INDEX)))
             self._num_hands = num_hands
 
-        #self._valid = self._set_validity()
+        self._valid = self._get_validity()
     '''
     def __repr__(self):
         for state in self._game_state:
@@ -67,29 +69,40 @@ class BlockConfigurationNode(AbstractNode):
 
     def __unicode__(self):
         raise NotImplementedError
+    '''
+    def _get_validity(self):
+        """
+        Checks that a new node has a valid state.
+        NOTE: does not check for states that would be unlikely to be generated using
+        the public methods provided.
 
-    def _set_validity(self):
-        raise Exception("Not updated")
-        pile1_red, pile2_red = self._get_block_count(self.RED_INDEX)
-        pile1_blue, pile2_blue = self._get_block_count(self.BLUE_INDEX)
+        :return: boolean, whether node meets the criteria for a valid node
+        """
+        pile1_red, pile2_red = self._get_count_for_piles(self.RED_INDEX)
+        pile1_blue, pile2_blue = self._get_count_for_piles(self.BLUE_INDEX)
+
+        # block count should always be a positive number
+        non_negative_pile_counts = (pile1_red >= 0 and pile2_red >= 0 and
+                                    pile1_blue >= 0 and pile2_blue >=0)
 
         # block count shouldn't exceed expected total number between pile1 and pile2
-        valid_red_pile1_count = 0 <= pile1_red <= self._red
-        valid_red_pile2_count = 0 <= pile2_red <= self._red
-        valid_blue_pile1_count = 0 <= pile1_blue <= self._blue
-        valid_blue_pile2_count = 0 <= pile2_blue <= self._blue
+        total_reds = self._color_count[self.RED_INDEX]
+        total_blues = self._color_count[self.BLUE_INDEX]
+        valid_red_pile_count = sum([pile1_red, pile2_red]) == total_reds
+        valid_blue_pile_count = sum([pile1_blue, pile2_blue]) == total_blues
 
         # can't have more reds than blues in any pile
         valid_red_vs_blue_count = pile1_red <= pile1_blue and pile2_red <= pile2_blue
 
-        raise NotImplementedError("Need to check that it is not a repeat of a previous state")
+        # don't repeat an existing game state
+        non_repeating_game_state = True
+        for state in self._game_state[:-1]:
+            non_repeating_game_state = state != self._current_state
 
-        return (valid_red_pile1_count and valid_red_pile2_count and
-                valid_blue_pile1_count and valid_blue_pile2_count and
-                valid_red_vs_blue_count)
+        return (non_negative_pile_counts and valid_red_vs_blue_count and
+                valid_red_pile_count and valid_blue_pile_count and
+                non_repeating_game_state)
 
-    def _block
-    '''
     def _get_count_for_piles(self, color_index):
         """
         Count how many blocks of a given color are in each pile total
