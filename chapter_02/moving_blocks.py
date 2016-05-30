@@ -21,6 +21,9 @@ class BlockConfigurationNode(AbstractNode):
     """
     TODO: write docs
     """
+
+    _allowed_moves = {}
+
     PILE1_REPR = 0
     PILE2_REPR = 1
 
@@ -34,7 +37,7 @@ class BlockConfigurationNode(AbstractNode):
 
     def __init__(self, state_for_red, state_for_blue,
                  total_red, total_blue, total_hands,
-                 parent=None):
+                 allowed_moves, parent=None):
         """
         Creates a node for use in the 'Block Game' problem.
 
@@ -52,30 +55,50 @@ class BlockConfigurationNode(AbstractNode):
 
         # game state setup
         self._state = self.game_state(state_for_red, state_for_blue)
-        self._moves = self._generate_allowed_moves()
         self._valid = self._set_validity()
 
-    def _generate_allowed_moves(self):
-        pile1 = []
-        pile2 = []
-
-        for i in range(self._hands):  #counter for Red
-            for j in range(self.hands-1, -1, -1):  # counter for Blue
-                pile1.append((-i, i), (-j, j))
-                pile2.append((i, -i), (j, -j))
-
-        return (pile1, pile2)
-
     def _set_validity(self):
-        # block count shouldn't exceed expected total number between pile1 and pile2
         pile1_red, pile2_red = self._get_block_count(self.RED_INDEX)
         pile1_blue, pile2_blue = self._get_block_count(self.BLUE_INDEX)
-        return pile1_red <= pile1_blue and pile2_red <= pile2_blue
+
+        # block count shouldn't exceed expected total number between pile1 and pile2
+        valid_red_pile1_count = 0 <= pile1_red <= self._red
+        valid_red_pile2_count = 0 <= pile2_red <= self._red
+        valid_blue_pile1_count = 0 <= pile1_blue <= self._blue
+        valid_blue_pile2_count = 0 <= pile2_blue <= self._blue
+
+        # can't have more reds than blues in any pile
+        valid_red_vs_blue_count = pile1_red <= pile1_blue and pile2_red <= pile2_blue
+
+        return (valid_red_pile1_count and valid_red_pile2_count and
+                valid_blue_pile1_count and valid_blue_pile2_count and
+                valid_red_vs_blue_count)
 
     def _get_block_count(self, game_state_index):
         pile1_count = self._state[game_state_index][self.PILE1_INDEX]
         pile2_count = self._state[game_state_index][self.PILE2_INDEX]
         return pile1_count, pile2_count
+
+    def allowed_moves(self):
+        """
+        Generates or gets from memoization valid moves for each pile of blocks.
+
+        :return: dict representing allowed moves for each pile
+        """
+        if not self._allowed_moves:
+            pile1 = []
+            pile2 = []
+
+            for i in range(self._hands):  # counter for Red
+                for j in range(self.hands - 1, -1, -1):  # counter for Blue
+                    if not (i == 0 and j == 0):  # we have to move at least one block
+                        pile1.append((-i, i), (-j, j))
+                        pile2.append((i, -i), (j, -j))
+
+            self._allowed_moves[self.PILE1_INDEX] = pile1
+            self._allowed_moves[self.PILE2_INDEX] = pile2
+
+        return self._allowed_moves
 
     @staticmethod
     def state_for_block_type(pile1, hand, pile2, hand_location):
@@ -93,10 +116,17 @@ class BlockConfigurationNode(AbstractNode):
         return self._valid
 
     def generate_child_nodes(self):
-        pass
+        child_nodes = []
+
+        # we don't want to waste time generating children for invalid nodes
+        if self.is_valid():
+
+            return []
+
+        return child_nodes
 
     def fulfills_goal(self, ending_state):
-        pass
+        return self._state == ending_state
 
 
 class BlockGameSolver(object):
