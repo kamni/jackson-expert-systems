@@ -55,7 +55,7 @@ class BlockConfigurationNode(AbstractNode):
             self._num_hands = num_hands
 
         self._valid = self._get_validity()
-    '''
+
     def __repr__(self):
         for state in self._game_state:
             repr_string = '['
@@ -68,8 +68,8 @@ class BlockConfigurationNode(AbstractNode):
         raise NotImplementedError
 
     def __unicode__(self):
-        raise NotImplementedError
-    '''
+        return unicode(repr(self))
+
     def _get_validity(self):
         """
         Checks that a new node has a valid state.
@@ -110,9 +110,34 @@ class BlockConfigurationNode(AbstractNode):
                 block count; either RED_INDEX or BLUE_INDEX
         :return: tuple, (count for pile1, count for pile2)
         """
-        pile1_count = self._current_state[color_index][self.PILE1_INDEX]
-        pile2_count = self._current_state[color_index][self.PILE2_INDEX]
-        return pile1_count, pile2_count
+        return self._current_state[color_index]
+
+    def _repr_for_state(self, state_tuple):
+        state_repr = ''
+        pile_counts = (self._get_count_for_piles(self.RED_INDEX),
+                       self._get_count_for_piles(self.BLUE_INDEX))
+        total_colors = (sum(pile_counts[0]), sum([1]))
+
+        for pile_index in (self.PILE1_INDEX, self.PILE2_INDEX):
+            state_repr += '['
+            for color_index in (self.RED_INDEX, self.BLUE_INDEX):
+                color_repr = ''
+                for i in range(total_colors[color_index]):
+                    if i < pile_counts[color_index][pile_index]:
+                        color_repr += ['R', 'B'][color_index]
+                    else:
+                        color_repr += ' '
+            state_repr += color_repr + ']'
+
+            if pile_index == self.PILE1_INDEX:
+                # repr for hand location
+                if state_tuple[self.HAND_POS_INDEX] == self.PILE1_INDEX:
+                    state_repr += 'O  '
+                else:
+                    state_repr += '  O'
+
+        return state_repr
+
     '''
     def _new_move(self, old_move_tuple, new_move_tuple):
         raise Exception("Not Updated")

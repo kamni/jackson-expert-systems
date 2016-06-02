@@ -88,6 +88,14 @@ class BlockConfigurationNodeTests(unittest.TestCase):
         node2 = BlockConfigurationNode(starting_state, parent=node1)
         self.assertFalse(node2._get_validity())
 
+    def test_get_count_for_piles__red(self):
+        starting_state = ((3, 0), (3, 0), 0)
+        node1 = BlockConfigurationNode(starting_state)
+        self.assertEqual(3, )
+
+    def test_get_count_for_piles__blue(self):
+        raise NotImplementedError
+
 
 if __name__ == '__main__':
     unittest.main()
