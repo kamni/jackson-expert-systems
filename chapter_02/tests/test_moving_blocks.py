@@ -102,7 +102,9 @@ class BlockConfigurationNodeTests(unittest.TestCase):
 
     def test_repr_for_state__hand_on_right(self):
         starting_state = ((2, 1), (3, 2), 1)
-        raise NotImplementedError
+        node1 = BlockConfigurationNode(starting_state)
+        expected_repr = '[RR  | BBB  ]   OO [R   | BB   ]'
+        self.assertEqual(expected_repr, node1._repr_for_state(starting_state))
 
 if __name__ == '__main__':
     unittest.main()
