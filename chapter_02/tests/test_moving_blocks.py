@@ -94,6 +94,17 @@ class BlockConfigurationNodeTests(unittest.TestCase):
         self.assertEqual((2, 1), node1._get_count_for_piles(BlockConfigurationNode.RED_INDEX))
         self.assertEqual((3, 2), node1._get_count_for_piles(BlockConfigurationNode.BLUE_INDEX))
 
+    def test_repr(self):
+        state1 = ((3, 0), (3, 0), 0)
+        node1 = BlockConfigurationNode(state1, num_hands=3)
+        expected1 = '[RRR | BBB] OOO    [    |    ]'
+        self.assertEqual(expected1, repr(node1))
+
+        state2 = ((2, 1), (2, 1), 1)
+        node2 = BlockConfigurationNode(state2, parent=node1)
+        expected2 = os.linesep.join([expected1, '[RR  | BB ]    OOO [R   | B  ]'])
+        self.assertEqual(expected2, repr(node2))
+
     def test_repr_for_state__hand_on_left(self):
         starting_state = ((2, 1), (3, 2), 0)
         node1 = BlockConfigurationNode(starting_state)
@@ -105,6 +116,7 @@ class BlockConfigurationNodeTests(unittest.TestCase):
         node1 = BlockConfigurationNode(starting_state)
         expected_repr = '[RR  | BBB  ]   OO [R   | BB   ]'
         self.assertEqual(expected_repr, node1._repr_for_state(starting_state))
+
 
 if __name__ == '__main__':
     unittest.main()

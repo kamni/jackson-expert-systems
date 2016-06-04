@@ -14,7 +14,10 @@ so we're just going to reword it as a blocks game. The rules are as follows:
 - You can ignore the blue/red count for blocks in the hand
 """
 
+import os
+
 from search import AbstractNode, AbstractSearch
+
 
 class BlockConfigurationNode(AbstractNode):
     """
@@ -57,15 +60,49 @@ class BlockConfigurationNode(AbstractNode):
         self._valid = self._get_validity()
 
     def __repr__(self):
-        for state in self._game_state:
-            repr_string = '['
+        repr = os.linesep.join([self._repr_for_state(state) for state in self._game_state])
+        return repr
+
+    def _repr_for_state(self, state_tuple):
+        pile_counts = (state_tuple[self.RED_INDEX], state_tuple[self.BLUE_INDEX])
+        total_colors = (sum(pile_counts[0]), sum(pile_counts[1]))
+
+        state_repr = ''
+        for pile_index in (self.PILE1_INDEX, self.PILE2_INDEX):
+            pile_repr = '['
+
             for color_index in (self.RED_INDEX, self.BLUE_INDEX):
+                color_repr = ''
 
-                for i in range(self._hands):
-                    #if i <
-                    pass
+                for i in range(total_colors[color_index]):
+                    if i < pile_counts[color_index][pile_index]:
+                        color_repr += ['R', 'B'][color_index]
+                    else:
+                        color_repr += ' '
 
-        raise NotImplementedError
+                if color_index == self.RED_INDEX:
+                    separator = ' | '
+                    color_repr += separator
+
+                pile_repr += color_repr
+
+            pile_repr += ']'
+
+            hand_location_repr = ''
+            if pile_index == self.PILE1_INDEX:
+                hands_repr = 'O' * self._num_hands
+                space_repr = ' ' * self._num_hands
+
+                hand_location_repr = ' '
+                if state_tuple[self.HAND_POS_INDEX] == self.PILE1_INDEX:
+                    hand_location_repr += hands_repr + space_repr
+                else:
+                    hand_location_repr += space_repr + hands_repr
+                hand_location_repr += ' '
+
+            state_repr += pile_repr + hand_location_repr
+
+        return state_repr
 
     def __unicode__(self):
         return unicode(repr(self))
@@ -111,48 +148,6 @@ class BlockConfigurationNode(AbstractNode):
         :return: tuple, (count for pile1, count for pile2)
         """
         return self._current_state[color_index]
-
-    def _repr_for_state(self, state_tuple):
-        pile_counts = (self._get_count_for_piles(self.RED_INDEX),
-                       self._get_count_for_piles(self.BLUE_INDEX))
-        total_colors = (sum(pile_counts[0]), sum(pile_counts[1]))
-
-        state_repr = ''
-        for pile_index in (self.PILE1_INDEX, self.PILE2_INDEX):
-            pile_repr = '['
-
-            for color_index in (self.RED_INDEX, self.BLUE_INDEX):
-                color_repr = ''
-
-                for i in range(total_colors[color_index]):
-                    if i < pile_counts[color_index][pile_index]:
-                        color_repr += ['R', 'B'][color_index]
-                    else:
-                        color_repr += ' '
-
-                if color_index == self.RED_INDEX:
-                    separator = ' | '
-                    color_repr += separator
-
-                pile_repr += color_repr
-
-            pile_repr += ']'
-
-            hand_location_repr = ''
-            if pile_index == self.PILE1_INDEX:
-                hands_repr = 'O' * self._num_hands
-                space_repr = ' ' * self._num_hands
-
-                hand_location_repr = ' '
-                if state_tuple[self.HAND_POS_INDEX] == self.PILE1_INDEX:
-                    hand_location_repr += hands_repr + space_repr
-                else:
-                    hand_location_repr += space_repr + hands_repr
-                hand_location_repr += ' '
-
-            state_repr += pile_repr + hand_location_repr
-
-        return state_repr
 
     '''
     def _new_move(self, old_move_tuple, new_move_tuple):
