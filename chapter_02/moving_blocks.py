@@ -104,10 +104,8 @@ class BlockConfigurationNode(AbstractNode):
         # can't have more reds than blues in any pile
         valid_red_vs_blue_count = pile1_red <= pile1_blue and pile2_red <= pile2_blue
 
-        # don't repeat an existing game state
-        non_repeating_game_state = True
-        for state in self._game_state[:-1]:
-            non_repeating_game_state = state != self._current_state
+        # don't go back through game states that have already been visited
+        non_repeating_game_state = self._game_state.count(state_tuple) <= 1
 
         return (non_negative_pile_counts and valid_red_vs_blue_count and
                 non_repeating_game_state)

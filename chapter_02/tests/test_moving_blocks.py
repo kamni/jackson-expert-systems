@@ -126,41 +126,29 @@ class BlockConfigurationNodeTests(unittest.TestCase):
         for move in expected_pile2:
             self.assertTrue(move in returned_pile2)
 
+    def test_calculate_validity__default(self):
+        state1 = ((3, 0), (3, 0), 0)
+        node1 = BlockConfigurationNode(state1)
+        self.assertTrue(node1._calculate_validity(state1))
+
+    def test_calculate_validity__more_red_than_blue(self):
+        state1 = ((3, 0), (2, 1), 0)
+        node1 = BlockConfigurationNode(state1)
+        self.assertFalse(node1._calculate_validity(state1))
+
+    def test_calculate_validity__non_negative_pile_numbers(self):
+        state1 = ((-1, -2), (2, -1), 0)
+        node1 = BlockConfigurationNode(state1)
+        self.assertFalse(node1._calculate_validity(state1))
+
+    def test_calculate_validity__no_state_repeats(self):
+        state1 = ((3, 0), (3, 0), 0)
+        node1 = BlockConfigurationNode(state1)
+        node2 = BlockConfigurationNode(state1, parent=node1)
+        self.assertFalse(node2._calculate_validity(state1))
+
+
     '''
-    def test_get_validity__default(self):
-        starting_state = ((3, 0), (3, 0), 0)
-        node1 = BlockConfigurationNode(starting_state)
-        self.assertTrue(node1.get_validity())
-
-        next_state = ((2,1), (2, 1), 1)
-        node2 = BlockConfigurationNode(next_state, parent=node1)
-        self.assertTrue(node2.get_validity())
-
-    def test_get_validity__more_red_than_blue(self):
-        starting_state = ((3, 0), (2, 1), 0)
-        node1 = BlockConfigurationNode(starting_state)
-        self.assertFalse(node1.get_validity())
-
-    def test_get_validity__non_negative_pile_numbers(self):
-        starting_state = ((-1, -2), (2, -1), 0)
-        node1 = BlockConfigurationNode(starting_state)
-        self.assertFalse(node1.get_validity())
-
-    def test_get_validity__expected_pile_numbers_match_total_count(self):
-        starting_state = ((3, 0), (3, 0), 0)
-        node1 = BlockConfigurationNode(starting_state)
-        node1._color_count = (2, 2)
-        self.assertFalse(node1.get_validity())
-
-    def test_get_validity__no_state_repeats(self):
-        starting_state = ((3, 0), (3, 0), 0)
-        node1 = BlockConfigurationNode(starting_state)
-        node2 = BlockConfigurationNode(starting_state, parent=node1)
-        self.assertFalse(node2.get_validity())
-
-
-
-
 
     def test_get_count_for_piles(self):
         starting_state = ((2, 1), (3, 2), 0)
