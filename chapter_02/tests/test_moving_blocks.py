@@ -12,81 +12,155 @@ class BlockConfigurationNodeTests(unittest.TestCase):
     """Tests for chapter_02.moving_blocks.BlockConfigurationNode"""
 
     def test_init__default(self):
-        starting_state = ((3,0), (3,0), 0)
-        node1 = BlockConfigurationNode(starting_state)
+        state1 = ((3,0), (3,0), 0)
+        node1 = BlockConfigurationNode(state1)
 
-        self.assertEqual(node1._current_state, starting_state)
+        self.assertEqual(node1._current_state, state1)
         self.assertEqual(None, node1._parent)
-        self.assertEqual(node1._game_state, [starting_state])
-        self.assertEqual(node1._color_count, (3, 3))
+        self.assertEqual(node1._game_state, [state1])
         self.assertEqual(node1._num_hands, 2)
+        self.assertTrue(node1._is_valid)
 
     def test_init__num_hands_specified(self):
-        starting_state = ((3, 0), (3, 0), 0)
-        node1 = BlockConfigurationNode(starting_state, num_hands=3)
+        state1 = ((3, 0), (3, 0), 0)
+        node1 = BlockConfigurationNode(state1, num_hands=3)
 
-        self.assertEqual(starting_state, node1._current_state)
+        self.assertEqual(state1, node1._current_state)
         self.assertEqual(None, node1._parent)
-        self.assertEqual([starting_state], node1._game_state)
-        self.assertEqual((3, 3), node1._color_count)
+        self.assertEqual([state1], node1._game_state)
         self.assertEqual(3, node1._num_hands)
+        self.assertTrue(node1._is_valid)
 
     def test_init__child_node(self):
-        starting_state = ((3, 0), (3, 0), 0)
-        node1 = BlockConfigurationNode(starting_state)
-        next_state = ((1,2), (3, 0), 0)
+        state1 = ((3, 0), (3, 0), 0)
+        node1 = BlockConfigurationNode(state1)
+        next_state = ((2, 1), (2, 1), 0)
         node2 = BlockConfigurationNode(next_state, parent=node1, num_hands=3)
 
         self.assertEqual(next_state, node2._current_state)
         self.assertEqual(node1, node2._parent)
         self.assertEqual(node1._game_state + [next_state], node2._game_state)
-        self.assertEqual(node1._color_count, node2._color_count)
         # should ignore extra num_hands parameter when parent specified
         self.assertEqual(node2._num_hands, node1._num_hands)
+        self.assertTrue(node2._is_valid)
 
     def test_init__node_isnt_valid(self):
         too_many_reds_state = ((3, 0), (2, 1), 0)
         node1 = BlockConfigurationNode(too_many_reds_state)
-        self.assertFalse(node1._valid)
+        self.assertFalse(node1._is_valid)
 
     def test_init__child_node_isnt_valid(self):
-        starting_state = ((3, 0), (3, 0), 0)
-        node1 = BlockConfigurationNode(starting_state)
+        state1 = ((3, 0), (3, 0), 0)
+        node1 = BlockConfigurationNode(state1)
 
-        lost_some_blocks = ((2, 0), (2, 0), 1)
-        node2 = BlockConfigurationNode(lost_some_blocks, parent=node1)
-        self.assertFalse(node2._valid)
+        state2 = ((1, 2), (3, 0), 1)
+        node2 = BlockConfigurationNode(state2, parent=node1)
+        self.assertFalse(node2._is_valid)
 
+    def test_calculate_possible_moves__one_red_and_blue_plus_one_hand(self):
+        state1 = ((1, 0), (1, 0), 0)
+        node1 = BlockConfigurationNode(state1, num_hands=1)
+        expected_pile1 = [
+            ((-1, 1), (0, 0)),
+            ((0, 0), (-1, 1))
+        ]
+        expected_pile2 = [
+            ((1, -1), (0, 0)),
+            ((0, 0), (1, -1))
+        ]
+
+        returned_pile1, returned_pile2 = node1._calculate_possible_moves()
+        self.assertEqual(len(expected_pile1), len(returned_pile1))
+        self.assertEqual(len(expected_pile2), len(returned_pile2))
+        for move in expected_pile1:
+            self.assertTrue(move in returned_pile1)
+        for move in expected_pile2:
+            self.assertTrue(move in returned_pile2)
+
+    def test_calculate_possible_moves__three_red_and_blue_plus_two_hands(self):
+        state1 = ((2, 1), (3, 0), 0)
+        node1 = BlockConfigurationNode(state1, num_hands=2)
+        expected_pile1 = [
+            ((-1, 1), (0, 0)),
+            ((0, 0), (-1, 1)),
+            ((-1, 1), (-1, 1)),
+            ((-2, 2), (0, 0)),
+            ((0, 0), (-2, 2))
+        ]
+        expected_pile2 = [
+            ((1, -1), (0, 0)),
+            ((0, 0), (1, -1)),
+            ((1, -1), (1, -1)),
+            ((2, -2), (0, 0)),
+            ((0, 0), (2, -2))
+        ]
+
+        returned_pile1, returned_pile2 = node1._calculate_possible_moves()
+        self.assertEqual(len(expected_pile1), len(returned_pile1))
+        self.assertEqual(len(expected_pile2), len(returned_pile2))
+        for move in expected_pile1:
+            self.assertTrue(move in returned_pile1)
+        for move in expected_pile2:
+            self.assertTrue(move in returned_pile2)
+
+    def test_generate_possible_moves__more_hands_than_blocks(self):
+        # We don't want to generate more moves than blocks
+        state1 = ((1, 0), (1, 0), 0)
+        node1 = BlockConfigurationNode(state1, num_hands=5)
+        expected_pile1 = [
+            ((-1, 1), (0, 0)),
+            ((0, 0), (-1, 1)),
+            ((-1, 1), (-1, 1))
+        ]
+        expected_pile2 = [
+            ((1, -1), (0, 0)),
+            ((0, 0), (1, -1)),
+            ((1, -1), (1, -1))
+        ]
+
+        returned_pile1, returned_pile2 = node1._calculate_possible_moves()
+        self.assertEqual(len(expected_pile1), len(returned_pile1))
+        self.assertEqual(len(expected_pile2), len(returned_pile2))
+        for move in expected_pile1:
+            self.assertTrue(move in returned_pile1)
+        for move in expected_pile2:
+            self.assertTrue(move in returned_pile2)
+
+    '''
     def test_get_validity__default(self):
         starting_state = ((3, 0), (3, 0), 0)
         node1 = BlockConfigurationNode(starting_state)
-        self.assertTrue(node1._get_validity())
+        self.assertTrue(node1.get_validity())
 
         next_state = ((2,1), (2, 1), 1)
         node2 = BlockConfigurationNode(next_state, parent=node1)
-        self.assertTrue(node2._get_validity())
+        self.assertTrue(node2.get_validity())
 
     def test_get_validity__more_red_than_blue(self):
         starting_state = ((3, 0), (2, 1), 0)
         node1 = BlockConfigurationNode(starting_state)
-        self.assertFalse(node1._get_validity())
+        self.assertFalse(node1.get_validity())
 
     def test_get_validity__non_negative_pile_numbers(self):
         starting_state = ((-1, -2), (2, -1), 0)
         node1 = BlockConfigurationNode(starting_state)
-        self.assertFalse(node1._get_validity())
+        self.assertFalse(node1.get_validity())
 
     def test_get_validity__expected_pile_numbers_match_total_count(self):
         starting_state = ((3, 0), (3, 0), 0)
         node1 = BlockConfigurationNode(starting_state)
         node1._color_count = (2, 2)
-        self.assertFalse(node1._get_validity())
+        self.assertFalse(node1.get_validity())
 
     def test_get_validity__no_state_repeats(self):
         starting_state = ((3, 0), (3, 0), 0)
         node1 = BlockConfigurationNode(starting_state)
         node2 = BlockConfigurationNode(starting_state, parent=node1)
-        self.assertFalse(node2._get_validity())
+        self.assertFalse(node2.get_validity())
+
+
+
+
 
     def test_get_count_for_piles(self):
         starting_state = ((2, 1), (3, 2), 0)
@@ -116,7 +190,11 @@ class BlockConfigurationNodeTests(unittest.TestCase):
         node1 = BlockConfigurationNode(starting_state)
         expected_repr = '[RR  | BBB  ]   OO [R   | BB   ]'
         self.assertEqual(expected_repr, node1._repr_for_state(starting_state))
+    '''
 
+    # tests for total_red_and_blue_count_for_state
+
+    # tests for red_and_blue_counts_for_each_pile
 
 if __name__ == '__main__':
     unittest.main()
